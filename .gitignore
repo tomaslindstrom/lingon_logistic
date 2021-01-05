@@ -1,0 +1,5 @@
+datasets/
+images/
+.spyproject/
+__pycache__/lingon_utils.cpython-38.pyc
+.ipynb_checkpoints/Lingon_logistic_model-checkpoint.ipynb
