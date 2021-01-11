@@ -76,7 +76,10 @@ def convert_dataset(set_cat):
     
     lingonset_x_list = []
     lingonset_y_list = []
-    lingon_path = lingon_path_main+set_cat+"_lingonset"
+    if set_cat == "test" or set_cat == "train":
+        lingon_path = lingon_path_main+set_cat+"_lingonset"+"/"
+    else:
+        lingon_path = lingon_path_main+set_cat+"/"
     for image in os.listdir(lingon_path):
         
         #Create label list i.e. y= 1 if "lingon", y = 0 if "icke-lingon"
@@ -117,7 +120,11 @@ def extract_dataset(set_cat):
     
     lingonset_x = []
     lingonset_y = []
-    lingon_path = lingon_path_main+set_cat+"_lingonset"+"/"
+    #print(set_cat)
+    if set_cat == "test" or set_cat == "train":
+        lingon_path = lingon_path_main+set_cat+"_lingonset"+"/"
+    else:
+        lingon_path = lingon_path_main+set_cat+"/"
     for image in os.listdir(lingon_path):
         lingonset_x.append(image)
         lingonset_y.append(extract_y(lingon_path,image))
@@ -187,7 +194,7 @@ def data_assure():
         else: 
             qa_set_y = set(test_lingonset_y)
         
-        #Loop trhough the set and find wrong or missin label
+        #Loop trhough the set and find wrong or missing label
         for qa_test_obj in qa_set_y:
             
             if qa_test_obj not in correct_labels:           #Tests if label not "lingon" or "icke-lingon"
@@ -285,10 +292,95 @@ def load_lingon_dataset(num_px = 64, num_py = 64):
      
 
 
-# In[1]
+
+def load_lingon_testset(re_test_lingonset, num_px = 64, num_py = 64):
+    
+    """
+        Parameters:
+        num_x, num_y resize parameters, default 64.
+        num_px = width , num_py = hight
+        
+        DESCRIPTION:
+        Prepeare a selected test-set to be verified on the model.
+        
+        
+        Prepares- preprocesses the dataset from loaded images in:
+            - test : ./dataset/re_test_lingonset , m_test labeled images
+        
+        Input images are:
+            - labeled "lingon" - "icke-lingon" in exif filed "UserComment"
+            - of different sizes
+    
+         Data set preparations :
+             - quality assurance i.e. lable names correct and all have labels
+             - no duplicates in sets or between sets ( to be developed)
+             - resizing , default num_x and num_y = 64 (to be developed.
+             - create feature arrays with RGB codes
+                 - train_set_x_orig:  numpy-array of shape( m_train, num_px, num_py, 3).
+                 - test_set_x_orig:    numpy-array of shape (m_test, num_px, num_py, 3)
+            - create the label arrays: lingon (y=1), icke-lingon (y=0)   
+    Returns
+    -------
+            
+      re_test_set_x_orig #Test set features, numpy array f shape (m_test, num_px, num_py,3)
+      re_test_set_y_orig #Test  set labels
+      
+      classes  np array of the classes i.e. labels
+    
+    """
+    
+    #Qualtity ensure that all images are labeled
+    re_test_lingonset_y, re_test_lingonset_x_orig = extract_dataset(re_test_lingonset)
+    
+    #Loop through the set and find wrong or missing label
+    for qa_test_obj in re_test_lingonset_y:
+        #print(qa_test_obj)
+        if qa_test_obj not in correct_labels:           #Tests if label not "lingon" or "icke-lingon"
+            raise ValueError ("Missing or wrong label")
+            break
+    
+    #Resize test set
+    test_set_path = lingon_path_main+re_test_lingonset
+    for image in os.listdir(test_set_path):
+        im = Image.open(str(test_set_path)+"/"+image)
+        im_exifdata = im.getexif()
+        im = im.resize((num_px,num_py))
+        #print(image, test_set_path)
+        im.save(str(test_set_path)+"/"+image, exif=im_exifdata)   #Save with replace of old name, possible change in future
+        im.close()
+    
+    # Build data sets
+        
+    #Create and convert trainset to numpy.ndarrays
+    re_test_set_x_tuple, re_test_set_y_tuple = convert_dataset(re_test_lingonset)
+    re_test_set_x_orig = np.array(re_test_set_x_tuple)      # Test set features
+    re_test_set_y_orig = np.array(re_test_set_y_tuple)      # Test set labels
+    
+    #reshape label arrays to (1, number of images)
+    re_test_set_y_orig = re_test_set_y_orig.reshape(1, re_test_set_y_orig.shape[0])
+    #Create classes - list i.e. the two classes "lingon" och "icke-lingon"
+    
+    #print(re_test_set_x_orig)
+    #print(re_test_set_y_orig)
+    
+    return re_test_set_x_orig, re_test_set_y_orig
+
+# In[3]
 """
-Call for load function - for test purposes
+Call for load function for test purposes : load_ligon_testset
+
+re_test_set_x_orig, re_test_set_y = load_lingon_testset("testset_lingon_skräp_bär_100",64 ,64)
+
+print(type(re_test_set_x_orig))
+print((re_test_set_x_orig).shape)
+print(type(re_test_set_y))
+print((re_test_set_y).shape)
+print(re_test_set_y)
 """
+# In[2]
+"""
+Call for load function - for test purposes for : load_lingon_dataset - function
+
 train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes = load_lingon_dataset(64,64)        #Paramenters num_px, num_py could be added
 print(type(train_set_x_orig))
 print((train_set_x_orig).shape)
@@ -301,4 +393,4 @@ print((test_set_y_orig).shape)
 print(type(classes))
 print(train_set_y_orig)
 print(test_set_y_orig)
-
+"""
